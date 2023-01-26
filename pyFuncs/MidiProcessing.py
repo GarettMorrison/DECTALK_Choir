@@ -22,6 +22,7 @@ def loadMidiData(midiFileName, printInfo=True):
             'title':'loremIpsum',
             'tempo':-1,
             'note':[],
+            'velocity':[],
             'start':[],
             'end':[],
             })
@@ -68,6 +69,7 @@ def loadMidiData(midiFileName, printInfo=True):
                 noteInd = active_notes.index(msg.note)
 
                 notesByChannel[channel]['note'].append( msg.note )
+                notesByChannel[channel]['velocity'].append( msg.velocity )
                 notesByChannel[channel]['start'].append( active_times[noteInd] )
                 notesByChannel[channel]['end'].append( currTime )
 

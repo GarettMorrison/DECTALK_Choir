@@ -1,0 +1,14 @@
+# Ignore folders which are generated during runtime
+outputs*
+*.pyc
+
+# Extra folders
+zips*
+klattclassic*
+dectalk*
+
+# Ignore all songs except for the 3 example tracks
+songs*
+!songs/CarolOfTheBells_Short*
+!songs/AuldLangSyne*
+!songs/DaisyBell*
