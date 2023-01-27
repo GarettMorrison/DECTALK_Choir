@@ -11,7 +11,7 @@ if len(sys.argv) < 2:
     print('No song specified')
     exit()
 
-songTitle = sys.argv[1]
+songTitle = sys.argv[-1]
 
 
 
@@ -47,8 +47,12 @@ else: consonantMinMs = settings_yaml['consonantMinMs']
 if not 'consonantMaxMs' in settings_yaml: consonantMaxMs = 75
 else: consonantMaxMs = settings_yaml['consonantMaxMs']
 
-for trackName in settings_yaml['Tracks']:
-    if 'LYRICS_FILENAME' not in settings_yaml['Tracks'][trackName]: settings_yaml['Tracks'][trackName]['LYRICS_FILENAME'] = trackName
+# Load default settings for track settings
+for fooTrack in settings_yaml['Tracks']:
+    trackDict = settings_yaml['Tracks'][fooTrack]
+    if 'LYRICS_FILENAME' not in trackDict: trackDict['LYRICS_FILENAME'] = fooTrack
+    if 'DEC_SETUP' not in trackDict: trackDict['DEC_SETUP'] = ''
+    if 'VOLUME_ADJUST_DB' not in trackDict: trackDict['VOLUME_ADJUST_DB'] = 0.0
 
 
 
@@ -443,3 +447,8 @@ for fooPartName in partNamesToOutput:
 
 print(f"Exporting:   outputs/{songTitle}/_finished/{songTitle}.wav")
 outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav')
+
+# Generate spectrogram visualization if -vis tag is included
+if '-vis' in sys.argv[1]:
+    import subprocess as sp
+    sp.run(f"python3 generateSpectrogram.py {songTitle}", shell=True)
