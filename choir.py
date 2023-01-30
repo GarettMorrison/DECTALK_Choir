@@ -451,4 +451,4 @@ outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav
 # Generate spectrogram visualization if -vis tag is included
 if '-vis' in sys.argv[1]:
     import subprocess as sp
-    sp.run(f"python3 generateSpectrogram.py {songTitle}", shell=True)
+    sp.run(f"python3 generateSpectrograms.py {songTitle}", shell=True)
