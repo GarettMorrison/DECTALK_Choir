@@ -93,14 +93,18 @@ if midiFileName == '':
 import pyFuncs.MidiProcessing as pymidi
 
 
-midiData = pymidi.loadMidiData(midiFileName, printInfo=False )
+midiData = pymidi.loadMidiData(midiFileName, printInfo=True )
 
 # Convert midi data to notes and durations
 noteSet = {}
 for fooMidi in midiData:
     notes = []
     midiPartName = fooMidi['title']
-    tempo_ms = fooMidi['tempo']/1000
+
+    if 'tempoEmergencyOverride' in settings_yaml:
+        songTempo = settings_yaml['tempoEmergencyOverride']
+    else:
+        tempo_ms = fooMidi['tempo']/1000
 
     # for foo in fooMidi: print(f"{foo}:{fooMidi[foo]}")
 
@@ -453,7 +457,7 @@ for fooPartName in partNamesToOutput:
 if outputAudio == None:
     print('No exported tracks found, exiting')
     exit()
-    
+
 print(f"Exporting:   outputs/{songTitle}/_finished/{songTitle}.wav")
 outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav')
 

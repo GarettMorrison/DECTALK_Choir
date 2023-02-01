@@ -20,7 +20,7 @@ def loadMidiData(midiFileName, printInfo=True):
         # channel = 0
         notesByChannel.append({
             'title':'loremIpsum',
-            'tempo':-1,
+            'tempo':300000,
             'note':[],
             'velocity':[],
             'start':[],
