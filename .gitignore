@@ -3,9 +3,9 @@ outputs*
 *.pyc
 
 # Extra folders
-zips*
-klattclassic*
-dectalk*
+zips/*
+klattclassic/*
+dectalk/*
 
 # Ignore all songs except for the 3 example tracks
 
