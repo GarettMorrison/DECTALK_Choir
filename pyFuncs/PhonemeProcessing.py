@@ -37,7 +37,7 @@ def lyricsToPhonemes(lyricsFileName, printInfo=True, convertLowercase=True, DECT
 
                     if DECTALK_check:
                         if outPhonemes[ii] in DECTALK_Arpabet_Conversions:
-                            print(f"DECTALK Arpabet conversion {outPhonemes[ii]} -> {DECTALK_Arpabet_Conversions[outPhonemes[ii]]}")
+                            print(f"      DECTALK Arpabet conversion {outPhonemes[ii]} -> {DECTALK_Arpabet_Conversions[outPhonemes[ii]]}")
                             outPhonemes[ii] = DECTALK_Arpabet_Conversions[outPhonemes[ii]]
 
                         

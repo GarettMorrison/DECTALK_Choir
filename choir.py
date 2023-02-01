@@ -59,8 +59,9 @@ for fooTrack in settings_yaml['Tracks']:
 # Load Lyrics and convert to phonemes
 import pyFuncs.PhonemeProcessing as pp
 phonemeSet = {}
+print(f"Converting tracks to phonemes ")
 for trackName in settings_yaml['Tracks']:
-    print(f"Converting track {trackName}")
+    print(f"   Converting /lyrics/{settings_yaml['Tracks'][trackName]['LYRICS_FILENAME']}.txt for  {trackName}")
     lyricFileName = f"songs/{songTitle}/lyrics/{settings_yaml['Tracks'][trackName]['LYRICS_FILENAME']}.txt"
     phonemes = pp.lyricsToPhonemes(lyricFileName, DECTALK_check=True, printInfo=False)
     phonemeSet[trackName] = phonemes
