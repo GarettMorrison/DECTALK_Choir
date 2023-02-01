@@ -446,10 +446,14 @@ outputAudio = None
 for fooPartName in partNamesToOutput:
     readWavFileName = f"outputs/{songTitle}/_tracks/{fooPartName}.wav"
     if outputAudio == None:
-        outputAudio = AudioSegment.from_file(readWavFileName)
+        outputAudio = AudioSegment.from_file(   )
     else:
         outputAudio = outputAudio.overlay(AudioSegment.from_file(readWavFileName))
 
+if outputAudio == None:
+    print('No exported tracks found, exiting')
+    exit()
+    
 print(f"Exporting:   outputs/{songTitle}/_finished/{songTitle}.wav")
 outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav')
 
