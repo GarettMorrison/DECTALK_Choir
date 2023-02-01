@@ -93,7 +93,7 @@ if midiFileName == '':
 import pyFuncs.MidiProcessing as pymidi
 
 
-midiData = pymidi.loadMidiData(midiFileName, printInfo=True )
+midiData = pymidi.loadMidiData(midiFileName, printInfo=False )
 
 # Convert midi data to notes and durations
 noteSet = {}
@@ -102,7 +102,7 @@ for fooMidi in midiData:
     midiPartName = fooMidi['title']
 
     if 'tempoEmergencyOverride' in settings_yaml:
-        songTempo = settings_yaml['tempoEmergencyOverride']
+        tempo_ms = settings_yaml['tempoEmergencyOverride']
     else:
         tempo_ms = fooMidi['tempo']/1000
 
