@@ -108,6 +108,12 @@ for fooMidi in midiData:
 
     # for foo in fooMidi: print(f"{foo}:{fooMidi[foo]}")
 
+
+    for ii in range(len(fooMidi['note']) -1):
+        if fooMidi['end'][ii] < fooMidi['start'][ii+1]:
+            fooMidi['end'][ii] = fooMidi['start'][ii+1]
+
+
     prevNote = 0
     for ii in range(len(fooMidi['note'])):
         if fooMidi['start'][ii] > prevNote:
@@ -311,7 +317,8 @@ for fooPartName in partNamesToOutput:
                 fooCompiledLyrics[-1].append(outputSet)
                 
         lyricIndex += 1
-        fooCompiledLyrics[-1].append(' ')
+        # fooCompiledLyrics[-1].append(' ')
+    
 
     if fooCompiledLyrics[-1] == []: fooCompiledLyrics = fooCompiledLyrics[:-1] # Catch if there is an extra unfilled line at end of lyrics
 
