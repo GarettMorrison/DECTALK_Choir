@@ -359,6 +359,7 @@ if True:
             partialTxtFile.write("]")
             partialTxtFile.close()
 
+
         
         print(f"{fooPartName} Partial wav files")
         for fooLine in compiledLyrics[fooPartName]:            
@@ -369,7 +370,7 @@ if True:
             outputWav = f"outputs/{songTitle}/{fooPartName}/{startTime}.wav"
             # # DEC_proc = sp.run(f"./say.exe -w " +outputWav, shell=True, stdin=partialTxtFile, stdout=sp.PIPE, stderr=sp.PIPE)
             # DEC_proc = sp.Popen(f"./say.exe -w {outputWav} < {partialTxtFileName}", shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-            DEC_proc = sp.Popen(f"./say.exe -w {outputWav} < {partialTxtFileName}", shell=True)
+            DEC_proc = sp.Popen(f".{os.sep}say.exe -w {outputWav} < {partialTxtFileName}", shell=True)
             procSet.append(DEC_proc)
 
             # if fooPartName == "Bass": print(f"./say.exe -w {outputWav} < {partialTxtFileName}")

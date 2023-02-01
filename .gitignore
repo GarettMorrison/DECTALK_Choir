@@ -1,5 +1,5 @@
 # Ignore folders which are generated during runtime
-outputs*
+outputs/*
 *.pyc
 
 # Extra folders
