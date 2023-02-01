@@ -1,0 +1,49 @@
+# Different voice options [:np] [:nb] [:nh] [:nd] [:nf] [:nu] [:nr] [:nw] [:nk]
+
+# How much to shift pitches by (DECTALK Pitches not the same as midi, should be 48 off or so)
+noteOffset: -60 
+
+# Words are broken up into phonemes, the playback lengths of which must be specified in code
+# This is calculated by setting a standard fraction of each word to dedicate to consonants
+# Also specify min and max length in milliseconds for each consonant to prevent weird issues
+consonantFractionTarget: 0.15
+consonantMinMs: 5
+consonantMaxMs: 75
+
+# Set Specific settings for each track
+# Make sure each track is listed here, included in the MIDI file, and has a .txt file in lyrics all with the same title
+Tracks:
+  Soprano:
+    DEC_SETUP: "[:np][:dv hs 95]"
+    VOLUME_ADJUST_DB: 7.0
+    VID_HSB: [328, 70, 97]
+    VID_Position: [0.5, 0.0, 0.0]
+    # VID_LabelDur: 4.0
+    # VID_LabelFade: 1.0
+    
+  Alto:
+    DEC_SETUP: "[:nk][:dv hs 100]"
+    VOLUME_ADJUST_DB: 0.0
+    VID_HSB: [154, 27, 79]
+    VID_Position: [0.5, 0.5, 0.0]
+    VID_LabelTime: 6.2
+    # VID_LabelDur: 4.0
+    # VID_LabelFade: 1.0
+    
+  Tenor:
+    DEC_SETUP: "[:np][:dv hs 110]"
+    VOLUME_ADJUST_DB: -5.0
+    VID_HSB: [210, 49, 160]
+    VID_Position: [0.5, 0.0, 0.5]
+    VID_LabelTime: 11.4
+    # VID_LabelDur: 4.0
+    # VID_LabelFade: 1.0
+    
+  Bass:
+    DEC_SETUP: "[:np][:dv hs 120]"
+    VOLUME_ADJUST_DB: -10.0
+    VID_HSB: [258, 33, 47]
+    VID_Position: [0.5, 0.5, 0.5]
+    VID_LabelTime: 16.6
+    # VID_LabelDur: 4.0
+    # VID_LabelFade: 1.0
