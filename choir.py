@@ -110,10 +110,13 @@ for fooMidi in midiData:
             notes.append([-1, 0,   (fooMidi['start'][ii] -prevNote)*tempo_ms/128,   fooMidi['start'][ii]*tempo_ms/128])
         notes.append([fooMidi['note'][ii], fooMidi['velocity'][ii],   (fooMidi['end'][ii] -fooMidi['start'][ii])*tempo_ms/128,   fooMidi['start'][ii]*tempo_ms/128] )
         prevNote = fooMidi['end'][ii]
-    noteSet[midiPartName] = notes
 
-    justPitches = list(zip(*notes))[0]
-    print(f"{midiPartName}:\n   tempo_ms:{tempo_ms}\n   Range:{min((foo for foo in justPitches if foo >= 0))} -> {max(justPitches)}")
+    if len(notes) > 0:
+        noteSet[midiPartName] = notes
+        justPitches = list(zip(*notes))[0]
+        print(f"{midiPartName}:\n   tempo_ms:{tempo_ms}\n   Range:{min((foo for foo in justPitches if foo >= 0))} -> {max(justPitches)}")
+    else:
+        print(f"MIDI Track {midiPartName} has no notes data, ignoring")
 
 
     
