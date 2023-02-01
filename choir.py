@@ -450,7 +450,7 @@ outputAudio = None
 for fooPartName in partNamesToOutput:
     readWavFileName = f"outputs/{songTitle}/_tracks/{fooPartName}.wav"
     if outputAudio == None:
-        outputAudio = AudioSegment.from_file(   )
+        outputAudio = AudioSegment.from_file(readWavFileName)
     else:
         outputAudio = outputAudio.overlay(AudioSegment.from_file(readWavFileName))
 
