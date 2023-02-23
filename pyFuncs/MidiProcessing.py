@@ -62,12 +62,16 @@ def loadMidiData(midiFileName, printInfo=True):
 
             currTime += msg.time
 
+            
+
             if msg.type == 'note_on': 
                 active_notes.append( msg.note  )
                 active_times.append( currTime )
             elif msg.note in active_notes:
                 noteInd = active_notes.index(msg.note)
 
+                if notesByChannel[channel]['title'] == 'Alto':print(f"{msg.type}     {msg.note}     {active_times[noteInd]} -> {currTime}")
+                
                 notesByChannel[channel]['note'].append( msg.note )
                 notesByChannel[channel]['velocity'].append( msg.velocity )
                 notesByChannel[channel]['start'].append( active_times[noteInd] )
@@ -76,5 +80,5 @@ def loadMidiData(midiFileName, printInfo=True):
                 del active_notes[noteInd]
                 del active_times[noteInd]
                 # notesByChannel[channel]['note'].append( 255 )
-    
+                
     return(notesByChannel)
