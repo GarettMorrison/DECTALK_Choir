@@ -25,8 +25,14 @@ Lines starting with **\#** are comments and will be ignored.
 Words starting with **`** are not split into phonemes, allowing very specific input if you're familiar with how DECtalk works. 
 > `kahl
 
-If a word needs to be played across multiple notes, add *X before it to play X notes across it. The code will attempt to match syllables to notes. 
-> *2 christmas is here
+If a word needs to be played across multiple notes, add X* before it to play X notes across it. The code will attempt to match syllables to notes. 
+> 2*christmas is here
+
+To specify a number of notes for each vowel, add numbers separated by |. Each vowel will pronounce that many syllables. 
+> 1|1|christmas is here
+
+Begin a line with !X to repeat X times.
+> !2 ding dong
 
 ## Settings
 Settings.yaml holds both general settings and per track settings. All settings are optional, and a default will be added by choir.py if none is specified. 

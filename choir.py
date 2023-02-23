@@ -93,7 +93,7 @@ if midiFileName == '':
 import pyFuncs.MidiProcessing as pymidi
 
 
-midiData = pymidi.loadMidiData(midiFileName, printInfo=False )
+midiData = pymidi.loadMidiData(midiFileName, printInfo=True )
 
 # Convert midi data to notes and durations
 noteSet = {}
@@ -106,19 +106,23 @@ for fooMidi in midiData:
     else:
         tempo_ms = fooMidi['tempo']/1000
 
-    # for foo in fooMidi: print(f"{foo}:{fooMidi[foo]}")
-
-
     for ii in range(len(fooMidi['note']) -1):
-        if fooMidi['end'][ii] < fooMidi['start'][ii+1]:
+        if fooMidi['end'][ii] >= fooMidi['start'][ii+1]:
             fooMidi['end'][ii] = fooMidi['start'][ii+1]
 
+    
 
     prevNote = 0
     for ii in range(len(fooMidi['note'])):
+        
+        if midiPartName == 'Alto':print(f"{ii}     {fooMidi['note'][ii]}     {fooMidi['velocity'][ii]}     {fooMidi['start'][ii]}     {fooMidi['end'][ii]}")
+
+
         if fooMidi['start'][ii] > prevNote:
             notes.append([-1, 0,   (fooMidi['start'][ii] -prevNote)*tempo_ms/128,   fooMidi['start'][ii]*tempo_ms/128])
         notes.append([fooMidi['note'][ii], fooMidi['velocity'][ii],   (fooMidi['end'][ii] -fooMidi['start'][ii])*tempo_ms/128,   fooMidi['start'][ii]*tempo_ms/128] )
+
+
         prevNote = fooMidi['end'][ii]
 
     if len(notes) > 0:
@@ -190,44 +194,58 @@ for fooPartName in partNamesToOutput:
     # # outputFile.write("[:phoneme arpabet speak on]\n[")
     # outputFile.write("[:phone arpa on][:np][")
 
-
-
     lyricIndex = 0
     noteIndex = 0
-    while lyricIndex < len(fooPhonemes) and noteIndex < len(fooNotes):
+    while lyricIndex < len(fooPhonemes) and noteIndex < len(fooNotes): # match notes  to phonemes until one of them runs out
         # If lyric is newline
         if fooPhonemes[lyricIndex][0] == '\n':
             if len(fooCompiledLyrics[-1]) > 0: fooCompiledLyrics.append([]) # Go to new complied line on newline character
             lyricIndex += 1
             continue
         
-        # If lyric is indicating multiple notes in next word
-        if fooPhonemes[lyricIndex][0] == '*':
-            notesInWord = int(fooPhonemes[lyricIndex][1:])
-            lyricIndex += 1
-        else:
-            notesInWord = 1
-        
+        notesInWord = 1
+
 
         if fooPhonemes[lyricIndex][0] == '`': # If syllable was input directly
             symbolsToSing = [fooPhonemes[lyricIndex][1:]]
             symbolIsVowel = [1]
         else:
-            # Load symbols and detect if they are vowels or not
             symbolsToSing = []
             symbolIsVowel = []
-            for fooPhoneme in fooPhonemes[lyricIndex]:
-                if fooPhoneme[-1].isnumeric(): # If last character in syllable is vowel, symbol is a vowel
-                    symbolsToSing.append(fooPhoneme[:-1]) # Drop number at end of vowel
-                    symbolIsVowel.append(1)
-                else:
-                    symbolsToSing.append(fooPhoneme)
-                    symbolIsVowel.append(0)
+            
+            if type(fooPhonemes[lyricIndex][0]) == list: # X|Y|Z|Lyric syntax, specify number of beats for each 
+                vowelLens = fooPhonemes[lyricIndex][0]
+                notesInWord = sum(vowelLens)
+                currVowel = 0
+                # Load symbols and detect if they are vowels or not
+                for fooPhoneme in fooPhonemes[lyricIndex][1:]:
+                    if fooPhoneme[-1].isnumeric(): # If last character in syllable is vowel, symbol is a vowel
+                        if currVowel >= len(vowelLens): break # Break if attempting to pronounce vowel but no more beat counts are specified
 
+                        for ii in range(vowelLens[currVowel]): # Append once for every vowel
+                            symbolsToSing.append(fooPhoneme[:-1]) # Drop number at end of vowel
+                            symbolIsVowel.append(1)
+                            
+                        currVowel += 1
+                    else:
+                        symbolsToSing.append(fooPhoneme)
+                        symbolIsVowel.append(0)
+            else:
+                # If playing multiple notes over course of word (X*Lyric syntax), first phoneme will be an int
+                if type( fooPhonemes[lyricIndex][0] ) == int:
+                    notesInWord = fooPhonemes[lyricIndex][0]
+                    fooPhonemes[lyricIndex] = fooPhonemes[lyricIndex][1:] # Remove X* phoneme from start
 
+                # Load symbols and detect if they are vowels or not
+                for fooPhoneme in fooPhonemes[lyricIndex]:
+                    if fooPhoneme[-1].isnumeric(): # If last character in syllable is vowel, symbol is a vowel
+                        symbolsToSing.append(fooPhoneme[:-1]) # Drop number at end of vowel
+                        symbolIsVowel.append(1)
+                    else:
+                        symbolsToSing.append(fooPhoneme)
+                        symbolIsVowel.append(0)
 
-
-        # Iterate through, matching notes to lyrics
+        # Iterate symbolsToSing & symbolIsVowel, matching notes to lyrics
         vowelsRemaining = sum(symbolIsVowel)
         symbolSingIndex = 0
         while symbolSingIndex < len(symbolsToSing):
@@ -241,7 +259,7 @@ for fooPartName in partNamesToOutput:
 
             # If note is a rest, write pause and load next note
             if noteValue == -1: 
-                if len(fooCompiledLyrics[-1]) > 0: fooCompiledLyrics[-1].append( ('_', round(noteDuration), 0) )
+                if len(fooCompiledLyrics[-1]) > 0: fooCompiledLyrics[-1].append( ('_', round(noteDuration), 0) ) # Save current note as pause if there are compiled lyrics
                 # outputFile.write(f"_<{round(noteDuration)},0>")
                 noteValue = fooNotes[noteIndex][0]
                 noteVelocity = fooNotes[noteIndex][1]
@@ -255,7 +273,6 @@ for fooPartName in partNamesToOutput:
 
 
             # Select one of three situations on how to keep iterating through word
-
             if notesInWord == 1: # Only one note remains, play remainder of phonemes on it
                 # print("LAST NOTE")
                 symbolIsVowel_subset = symbolIsVowel[symbolSingIndex:]
@@ -288,7 +305,6 @@ for fooPartName in partNamesToOutput:
             # Calculate durations for each phoneme
             vowelCount = sum(symbolIsVowel_subset)
             consonantCount = len(symbolIsVowel_subset) - sum(symbolIsVowel_subset)
-            # print(f"vowelCount:{vowelCount}    consonantCount:{consonantCount}")
 
             if consonantCount == 0 or vowelCount == 0: # If word does not have vowels or consonants catch divide by 0 error
                 consonantDuration = round(noteDuration * consonantCount / (consonantCount + vowelCount))
@@ -307,6 +323,7 @@ for fooPartName in partNamesToOutput:
                 consonantDuration = consonantMaxMs
                 vowelDuration = round( (noteDuration -consonantCount*consonantDuration) / vowelCount)
 
+            
             
             # Actually save phonemes to array
             for ii in range(len(symbolsToSing_subset)):
@@ -355,7 +372,6 @@ if True:
         # if fooPartName != 'Tenor': continue
 
         os.makedirs(f"outputs/{songTitle}/{fooPartName}", exist_ok = True) # Save partial tracks
-
         
         print(f"{fooPartName} Partial txt files")
 

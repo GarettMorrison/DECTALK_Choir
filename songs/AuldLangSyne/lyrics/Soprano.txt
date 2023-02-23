@@ -1,8 +1,8 @@
-Should auld *2 acquaint ants be for got
-And *2 never brought to mind
-Should auld *2 acquaint ants be for got
+Should auld 2*acquaint ants be for got
+And 2*never brought to mind
+Should auld 2*acquaint ants be for got
 And days of auld lang sign
-For *2 auld *2 lang sign my dear
-For *2 auld *2 lang sign
+For 2*auld 2*lang sign my dear
+For 2*auld 2*lang sign
 We'll take a cup o kind ness yet
 For days of auld lang sign 
