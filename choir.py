@@ -53,6 +53,7 @@ for fooTrack in settings_yaml['Tracks']:
     if 'LYRICS_FILENAME' not in trackDict: trackDict['LYRICS_FILENAME'] = fooTrack
     if 'DEC_SETUP' not in trackDict: trackDict['DEC_SETUP'] = ''
     if 'VOLUME_ADJUST_DB' not in trackDict: trackDict['VOLUME_ADJUST_DB'] = 0.0
+    if 'OCTAVE_BOOST' not in trackDict: trackDict['OCTAVE_BOOST'] = 1
 
 
 
@@ -351,10 +352,6 @@ for fooPartName in partNamesToOutput:
 
 
 
-
-
-
-
 # Save text files of partial tracks and generate .wavs
 print(f"\n\nGenerating partial audio files")
 procSet = [] # Save all currently running processes, to make sure all finish before moving on
@@ -369,15 +366,16 @@ if True:
     # Iterate over each track and save
     for fooPartName in partNamesToOutput:
         foo_DEC_SETUP = settings_yaml['Tracks'][fooPartName]['DEC_SETUP']
+        foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
         # if fooPartName != 'Tenor': continue
 
         os.makedirs(f"outputs/{songTitle}/{fooPartName}", exist_ok = True) # Save partial tracks
         
+        # Generate partial .txt files for running DECtalk
         print(f"{fooPartName} Partial txt files")
-
         for fooLine in compiledLyrics[fooPartName]:
             startTime = fooLine[0]
-            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
+            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.txt"
 
             # Write partial text file
             partialTxtFile = open(partialTxtFile, 'w')
@@ -386,27 +384,26 @@ if True:
                 if fooPhen == ' ':
                     partialTxtFile.write(' ')
                 else:
-                    partialTxtFile.write(f"{fooPhen[0]}<{fooPhen[1]},{fooPhen[2]}>")
+                    partialTxtFile.write(f"{fooPhen[0]}<{fooPhen[1]*foo_OCTAVE_BOOST},{fooPhen[2]}>")
+            
             partialTxtFile.write("]")
             partialTxtFile.close()
-
-
         
+        # Generate partial .wav files by calling DECtalk on each file
         print(f"{fooPartName} Partial wav files")
         for fooLine in compiledLyrics[fooPartName]:            
             startTime = fooLine[0]
-            partialTxtFileName = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
+            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.txt"
             # partialTxtFile = open(partialTxtFileName, 'r')
             
-            outputWav = f"outputs/{songTitle}/{fooPartName}/{startTime}.wav"
-            # # DEC_proc = sp.run(f"./say.exe -w " +outputWav, shell=True, stdin=partialTxtFile, stdout=sp.PIPE, stderr=sp.PIPE)
-            # DEC_proc = sp.Popen(f"./say.exe -w {outputWav} < {partialTxtFileName}", shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-            DEC_proc = sp.Popen(f".{os.sep}say.exe -w {outputWav} < {partialTxtFileName}", shell=True)
+            outputWav = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.wav"
+            DEC_proc = sp.Popen(f".{os.sep}say.exe -w {outputWav} < {partialTxtFile}", shell=True) # Finally actual run DECtalk! Opens a bunch of processes to run every file in parallel
             procSet.append(DEC_proc)
 
             # if fooPartName == "Bass": print(f"./say.exe -w {outputWav} < {partialTxtFileName}")
 
 
+# Wait for all of the DECtalk programs to exit
 ii=0
 while len(procSet) > 0:
     if procSet[ii].poll() != None:
@@ -418,8 +415,6 @@ while len(procSet) > 0:
         ii = 0
         print(f"Waiting on say.exe processes to finish, {len(procSet)} remaing")
         time.sleep(0.5)
-    
-    
 
 
 
@@ -429,20 +424,21 @@ print(f"\n\n\Mixing partial wav files")
 from pydub import AudioSegment
 
 for fooPartName in partNamesToOutput:
-    firstNote = compiledLyrics[fooPartName][0][0]
-    outputAudio = AudioSegment.silent(firstNote + 1000)
+    foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
+    firstNote = compiledLyrics[fooPartName][0][0] # Get time of first note
+    outputAudio = AudioSegment.silent((firstNote + 1000)*foo_OCTAVE_BOOST) # Init audio output as silence to fill up until the start of the audio
     
     for fooLine in compiledLyrics[fooPartName]:
-        # Get just volume data
+        # Get average velocities of notes in this line to adjust playback volume
         velocities = [foo[3] for foo in fooLine[1:] if type(foo) == tuple and foo[0] != '_']
         meanVelocity = (sum(velocities)/len(velocities)/127 -0.5)*10
         
         startTime = fooLine[0]
-        readWavFileName = f"outputs/{songTitle}/{fooPartName}/{startTime}.wav"
+        readWavFileName = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.wav"
         
         try:
             nextAudio = AudioSegment.from_file(readWavFileName) +meanVelocity +settings_yaml['Tracks'][fooPartName]['VOLUME_ADJUST_DB']
-            outputAudio = (AudioSegment.silent(startTime +1000) + nextAudio).overlay(outputAudio)
+            outputAudio = (AudioSegment.silent((startTime +1000)*foo_OCTAVE_BOOST) + nextAudio).overlay(outputAudio)
         except:
             print(f"ERROR READING {readWavFileName}, LINE NOT INCLUDED")
 
@@ -471,11 +467,23 @@ for fooPartName in partNamesToOutput:
 # Final mix
 outputAudio = None
 for fooPartName in partNamesToOutput:
+    foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
     readWavFileName = f"outputs/{songTitle}/_tracks/{fooPartName}.wav"
-    if outputAudio == None:
-        outputAudio = AudioSegment.from_file(readWavFileName)
-    else:
-        outputAudio = outputAudio.overlay(AudioSegment.from_file(readWavFileName))
+    trackAudio = AudioSegment.from_file(readWavFileName)
+    
+
+    if foo_OCTAVE_BOOST > 1: #  Multiply playback speed by OCTAVE_BOOST
+        initRate = trackAudio.frame_rate
+        new_sample_rate = int(trackAudio.frame_rate * foo_OCTAVE_BOOST)
+        trackAudio = trackAudio._spawn(trackAudio.raw_data, overrides={'frame_rate': new_sample_rate})
+        trackAudio = trackAudio.set_frame_rate(new_sample_rate)
+
+    # Overlay track to output
+    if outputAudio == None: outputAudio = trackAudio
+    else: outputAudio = outputAudio.overlay(trackAudio)
+
+
+
 
 if outputAudio == None:
     print('No exported tracks found, exiting')
