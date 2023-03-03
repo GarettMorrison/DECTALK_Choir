@@ -31,7 +31,7 @@ try:
     file = open(f"songs/{songTitle}/settings.yaml", 'r')
     settings_yaml = yaml.safe_load(file)
 except:
-    print(f"songs/{songTitle}/settings.yaml NOT FOUND")
+    print(f"songs/{songTitle}/settings.yaml not loaded")
     exit()
 
 # Constants loaded from settings.yaml
@@ -53,7 +53,7 @@ for fooTrack in settings_yaml['Tracks']:
     if 'LYRICS_FILENAME' not in trackDict: trackDict['LYRICS_FILENAME'] = fooTrack
     if 'DEC_SETUP' not in trackDict: trackDict['DEC_SETUP'] = ''
     if 'VOLUME_ADJUST_DB' not in trackDict: trackDict['VOLUME_ADJUST_DB'] = 0.0
-    if 'OCTAVE_BOOST' not in trackDict: trackDict['OCTAVE_BOOST'] = 1
+    if 'OCTAVE_BOOST' not in trackDict: trackDict['OCTAVE_BOOST'] = 0
 
 
 
@@ -93,7 +93,6 @@ if midiFileName == '':
 # Load MIDI data
 import pyFuncs.MidiProcessing as pymidi
 
-
 midiData = pymidi.loadMidiData(midiFileName, printInfo=True )
 
 # Convert midi data to notes and durations
@@ -106,6 +105,7 @@ for fooMidi in midiData:
         tempo_ms = settings_yaml['tempoEmergencyOverride']
     else:
         tempo_ms = fooMidi['tempo']/1000
+        print(f"----------------------------------------------- tempo_ms:{tempo_ms}")
 
     for ii in range(len(fooMidi['note']) -1):
         if fooMidi['end'][ii] >= fooMidi['start'][ii+1]:
@@ -375,7 +375,7 @@ if True:
         print(f"{fooPartName} Partial txt files")
         for fooLine in compiledLyrics[fooPartName]:
             startTime = fooLine[0]
-            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.txt"
+            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
 
             # Write partial text file
             partialTxtFile = open(partialTxtFile, 'w')
@@ -384,7 +384,7 @@ if True:
                 if fooPhen == ' ':
                     partialTxtFile.write(' ')
                 else:
-                    partialTxtFile.write(f"{fooPhen[0]}<{fooPhen[1]*foo_OCTAVE_BOOST},{fooPhen[2]}>")
+                    partialTxtFile.write(f"{fooPhen[0]}<{round(fooPhen[1]*pow(2, foo_OCTAVE_BOOST/12))},{round(fooPhen[2]-foo_OCTAVE_BOOST)}>")
             
             partialTxtFile.write("]")
             partialTxtFile.close()
@@ -393,10 +393,10 @@ if True:
         print(f"{fooPartName} Partial wav files")
         for fooLine in compiledLyrics[fooPartName]:            
             startTime = fooLine[0]
-            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.txt"
+            partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
             # partialTxtFile = open(partialTxtFileName, 'r')
             
-            outputWav = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.wav"
+            outputWav = f"outputs/{songTitle}/{fooPartName}/{startTime}.wav"
             DEC_proc = sp.Popen(f".{os.sep}say.exe -w {outputWav} < {partialTxtFile}", shell=True) # Finally actual run DECtalk! Opens a bunch of processes to run every file in parallel
             procSet.append(DEC_proc)
 
@@ -421,12 +421,13 @@ while len(procSet) > 0:
 # Mix each partial wav file
 print(f"\n\n\Mixing partial wav files")
 
-from pydub import AudioSegment
+from pydub import AudioSegment, effects
+import pyrubberband as pyrb
 
 for fooPartName in partNamesToOutput:
     foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
     firstNote = compiledLyrics[fooPartName][0][0] # Get time of first note
-    outputAudio = AudioSegment.silent((firstNote + 1000)*foo_OCTAVE_BOOST) # Init audio output as silence to fill up until the start of the audio
+    outputAudio = AudioSegment.silent((firstNote + 1000)) # Init audio output as silence to fill up until the start of the audio
     
     for fooLine in compiledLyrics[fooPartName]:
         # Get average velocities of notes in this line to adjust playback volume
@@ -434,13 +435,22 @@ for fooPartName in partNamesToOutput:
         meanVelocity = (sum(velocities)/len(velocities)/127 -0.5)*10
         
         startTime = fooLine[0]
-        readWavFileName = f"outputs/{songTitle}/{fooPartName}/{startTime*foo_OCTAVE_BOOST}.wav"
+        readWavFileName = f"outputs/{songTitle}/{fooPartName}/{startTime}.wav"
         
-        try:
-            nextAudio = AudioSegment.from_file(readWavFileName) +meanVelocity +settings_yaml['Tracks'][fooPartName]['VOLUME_ADJUST_DB']
-            outputAudio = (AudioSegment.silent((startTime +1000)*foo_OCTAVE_BOOST) + nextAudio).overlay(outputAudio)
-        except:
-            print(f"ERROR READING {readWavFileName}, LINE NOT INCLUDED")
+        # try:
+        nextAudio = AudioSegment.from_file(readWavFileName) +meanVelocity +settings_yaml['Tracks'][fooPartName]['VOLUME_ADJUST_DB']
+        
+        if foo_OCTAVE_BOOST != 0: #  Multiply playback speed by OCTAVE_BOOST
+            initRate = nextAudio.frame_rate
+            new_sample_rate = int(nextAudio.frame_rate * pow(2, foo_OCTAVE_BOOST/12))
+            print(f"initRate:{initRate}     new_sample_rate:{new_sample_rate}")
+            nextAudio = nextAudio._spawn(nextAudio.raw_data, overrides={'frame_rate': new_sample_rate})
+            nextAudio = nextAudio.set_frame_rate(new_sample_rate)
+            effects.speedup(nextAudio, foo_OCTAVE_BOOST/12)
+
+        outputAudio = (AudioSegment.silent((startTime +1000)) + nextAudio).overlay(outputAudio)
+        # except:
+        #     print(f"ERROR READING {readWavFileName}, LINE NOT INCLUDED")
 
         # print(f"{fooPartName}:{startTime}")
 
@@ -467,17 +477,9 @@ for fooPartName in partNamesToOutput:
 # Final mix
 outputAudio = None
 for fooPartName in partNamesToOutput:
-    foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
     readWavFileName = f"outputs/{songTitle}/_tracks/{fooPartName}.wav"
     trackAudio = AudioSegment.from_file(readWavFileName)
     
-
-    if foo_OCTAVE_BOOST > 1: #  Multiply playback speed by OCTAVE_BOOST
-        initRate = trackAudio.frame_rate
-        new_sample_rate = int(trackAudio.frame_rate * foo_OCTAVE_BOOST)
-        trackAudio = trackAudio._spawn(trackAudio.raw_data, overrides={'frame_rate': new_sample_rate})
-        trackAudio = trackAudio.set_frame_rate(new_sample_rate)
-
     # Overlay track to output
     if outputAudio == None: outputAudio = trackAudio
     else: outputAudio = outputAudio.overlay(trackAudio)
