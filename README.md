@@ -39,7 +39,7 @@ Settings.yaml holds both general settings and per track settings. All settings a
 
 ### General Settings
 
-**noteOffset**: DECtalk uses a different pitch encoding than MIDI, setting noteOffset to -48 should shift the pitches to match. DECtalk can only sing notes from C3-C6. This can also be tweaked to transpose songs into a playable range. 
+**noteOffset**: DECtalk uses a different pitch encoding than MIDI, setting noteOffset to -48 should shift the pitches to match. DECtalk can only sing notes from C3-C6 (MIDI 48-72). This can also be tweaked to transpose songs into a playable range. 
 
 Consonants are played as separate phonemes. How long each consonant is played for can be tweaked with the following. 
 **consonantFractionTarget**: The maximum time taken up by consonants across the whole word. 
