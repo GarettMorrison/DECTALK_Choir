@@ -20,6 +20,7 @@ Tracks:
     VID_Position: [0.5, 0.0, 0.0]
     # VID_LabelDur: 4.0
     # VID_LabelFade: 1.0
+    OCTAVE_BOOST: 2
     
   Alto:
     DEC_SETUP: "[:nk][:dv hs 100]"
@@ -47,3 +48,4 @@ Tracks:
     VID_LabelTime: 16.6
     # VID_LabelDur: 4.0
     # VID_LabelFade: 1.0
+    OCTAVE_BOOST: 0.5

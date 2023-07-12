@@ -39,7 +39,7 @@ Settings.yaml holds both general settings and per track settings. All settings a
 
 ### General Settings
 
-**noteOffset**: DECtalk uses a different pitch encoding than MIDI, -48 should shift the pitches to match. This can also be tweaked to transpose songs into a playable range, as most voices only work from C2-C5. 
+**noteOffset**: DECtalk uses a different pitch encoding than MIDI, setting noteOffset to -48 should shift the pitches to match. DECtalk can only sing notes from C3-C6 (MIDI 48-72). This can also be tweaked to transpose songs into a playable range. 
 
 Consonants are played as separate phonemes. How long each consonant is played for can be tweaked with the following. 
 **consonantFractionTarget**: The maximum time taken up by consonants across the whole word. 
@@ -55,6 +55,7 @@ Consonants are played as separate phonemes. How long each consonant is played fo
 \[:np\] sets the voice to perfect paul, the most popular voice. Other voices include \[:np\] \[:nb\] \[:nh\] \[:nd\] \[:nf\] \[:nu\] \[:nr\] \[:nw\] & \[:nk\]
 \[:dv hs 95\] changes the head size to be 95% standard. I usually increase head size for lower voices as I think it sounds better. 
 There are a ton of other settings to play with that I haven't taken the time to learn, I've been mostly focused on the synchronization and playback. 
+
 
 
 
