@@ -68,6 +68,7 @@ for trackName in settings_yaml['Tracks']:
 	print(f"   Converting /lyrics/{settings_yaml['Tracks'][trackName]['LYRICS_FILENAME']}.txt for  {trackName}")
 	lyricFileName = f"songs/{songTitle}/lyrics/{settings_yaml['Tracks'][trackName]['LYRICS_FILENAME']}.txt"
 	phonemes = pp.lyricsToPhonemes(lyricFileName, DECTALK_check=True, printInfo=False)
+	print(phonemes)
 	phonemeSet[trackName] = phonemes
 
 
@@ -126,9 +127,6 @@ for fooMidi in midiData:
 			notes.append([-1, 0,   (fooMidi['start'][ii] -prevNoteTime)*tempo_ms/ticksPerBeat,   fooMidi['start'][ii]*tempo_ms/ticksPerBeat])
 			
 		notes.append([fooMidi['note'][ii], fooMidi['velocity'][ii],   (fooMidi['end'][ii] -fooMidi['start'][ii])*tempo_ms/ticksPerBeat,   fooMidi['start'][ii]*tempo_ms/ticksPerBeat] )
-
-		if ii<10:
-			print(f"       {fooMidi['start'][ii]}   {fooMidi['end'][ii]}")
 
 		prevNoteTime = fooMidi['end'][ii]
 
@@ -366,7 +364,7 @@ if '-plt' in sys.argv[1]:
 	
 	colorSet = [(147, 181, 198), (221, 237, 170), (240, 207, 101), (215, 129, 106), (189, 79, 108), ]
 	yPerNote = 120
-	xPerMs = 0.4
+	xPerMs = 0.8
 
 	# notes.append([fooMidi['note'][ii], fooMidi['velocity'][ii],   (fooMidi['end'][ii] -fooMidi['start'][ii])*tempo_ms/128,   fooMidi['start'][ii]*tempo_ms/128] )
 	maxNote = -1
@@ -431,7 +429,7 @@ if '-plt' in sys.argv[1]:
 				noteVal = round(fooPhen[2]-foo_OCTAVE_BOOST)
 
 				labelText = f"{fooPhen[0]}"
-				labelDims = draw.textsize(labelText, font=labelFont)
+				labelDims = labelFont.getsize(labelText)
 
 				notePos = maxNote-noteVal
 
@@ -523,12 +521,14 @@ while len(procSet) > 0:
 
 
 # Mix each partial wav file
-print(f"\n\n\Mixing partial wav files")
+print(f"\n\nMixing partial wav files")
 
 
 from pydub import AudioSegment, effects
 import pyrubberband as pyrb
 
+
+outputAudioDict = {}
 for fooPartName in partNamesToOutput:
 	foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
 	firstNote = compiledLyrics[fooPartName][0][0] # Get time of first note
@@ -573,28 +573,24 @@ for fooPartName in partNamesToOutput:
 		#     print(f">")
 		#     outputAudio = outputAudio[:startTime] + outputAudio[startTime:].overlay(nextAudio)
 
-		
+	outputAudioDict[fooPartName] = outputAudio
+	
 	print(f"Exporting:   outputs/{songTitle}/_tracks/{fooPartName}.wav")
 	outputAudio.export(f"outputs/{songTitle}/_tracks/{fooPartName}.wav", format='wav') #export mixed  audio file
 
+audioLenth = max( [outputAudioDict[fooPartName].duration_seconds for fooPartName in partNamesToOutput] )
 
+print(f"audioLenth:{audioLenth}")
 
 # Final mix
-outputAudio = None
+outputAudio = AudioSegment.silent(audioLenth*1000)
 for fooPartName in partNamesToOutput:
 	readWavFileName = f"outputs/{songTitle}/_tracks/{fooPartName}.wav"
 	trackAudio = AudioSegment.from_file(readWavFileName)
+	outputAudio = outputAudio.overlay(trackAudio)
 	
-	# Overlay track to output
-	if outputAudio == None: outputAudio = trackAudio
-	else: outputAudio = outputAudio.overlay(trackAudio)
-
-
-
-
-if outputAudio == None:
-	print('No exported tracks found, exiting')
-	exit()
+	# outputAudio.overlay(outputAudioDict[fooPartName])
+	# print(outputAudioDict[fooPartName])
 
 print(f"Exporting:   outputs/{songTitle}/_finished/{songTitle}.wav")
 outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav')
@@ -603,3 +599,12 @@ outputAudio.export(f"outputs/{songTitle}/_finished/{songTitle}.wav", format='wav
 if '-vis' in sys.argv[1]:
 	import subprocess as sp
 	sp.run(f"python3 generateSpectrograms.py {songTitle}", shell=True)
+
+
+
+if '-play' in sys.argv[1]:
+	# from playsound import playsound
+	# playsound(f"outputs/{songTitle}/_finished/{songTitle}.wav")
+
+	from pydub.playback import play
+	play(outputAudio)
