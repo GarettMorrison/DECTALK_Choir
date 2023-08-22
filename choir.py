@@ -139,6 +139,8 @@ for fooMidi in midiData:
 	else:
 		print(f"MIDI Track {midiPartName} has no notes data, ignoring")
 
+# exit()
+
 
 	
 
@@ -182,10 +184,6 @@ print(f"Parts with just words:{phonPartNames}")
 #         if not 'VOLUME_ADJUST_DB' in settings_yaml[fooName]:
 #             print(f"VOLUME_ADJUST_DB NOT FOUND for {fooName} in settings.yaml, adding default")
 #             settings_yaml[fooName]['VOLUME_ADJUST_DB'] = 1.0
-
-
-
-
 
 
 
@@ -267,8 +265,7 @@ for fooPartName in partNamesToOutput:
 
 			# If note is a rest, write pause and load next note
 			if noteValue == -1: 
-				if len(fooCompiledLyrics[-1]) > 0: fooCompiledLyrics[-1].append( ('_', round(noteDuration), 0) ) # Save current note as pause if there are compiled lyrics
-				# outputFile.write(f"_<{round(noteDuration)},0>")
+				if len(fooCompiledLyrics[-1]) > 0: fooCompiledLyrics[-1].append( ('_', round(noteDuration), 0, 0) ) # Save current note as pause if there are compiled lyrics
 				noteValue = fooNotes[noteIndex][0]
 				noteVelocity = fooNotes[noteIndex][1]
 				noteDuration = fooNotes[noteIndex][2]
@@ -332,14 +329,18 @@ for fooPartName in partNamesToOutput:
 				vowelDuration = round( (noteDuration -consonantCount*consonantDuration) / vowelCount)
 
 			
+			if consonantDuration < 0 or vowelDuration < 0:
+				print(f"Too fast to pronounce {symbolsToSing_subset[ii]} in lyric \"{fooPhonemes[lyricIndex]}\"")
+				continue
+
 			
 			# Actually save phonemes to array
 			for ii in range(len(symbolsToSing_subset)):
 				if symbolIsVowel_subset[ii]: outputSet = ( symbolsToSing_subset[ii], vowelDuration, noteValue, noteVelocity )
 				else: outputSet = ( symbolsToSing_subset[ii], consonantDuration, noteValue, noteVelocity )
 
-				if len(fooCompiledLyrics[-1]) == 0: fooCompiledLyrics[-1].append(round(noteStart)) # Save start time of each note 
-				fooCompiledLyrics[-1].append(outputSet)
+				if len(fooCompiledLyrics[-1]) == 0: fooCompiledLyrics[-1].append(round(noteStart)) # Save start time of each compiled lyric set 
+				fooCompiledLyrics[-1].append(outputSet) # Save to output
 				
 		lyricIndex += 1
 		# fooCompiledLyrics[-1].append(' ')
@@ -348,14 +349,6 @@ for fooPartName in partNamesToOutput:
 	if fooCompiledLyrics[-1] == []: fooCompiledLyrics = fooCompiledLyrics[:-1] # Catch if there is an extra unfilled line at end of lyrics
 
 	compiledLyrics[fooPartName] = fooCompiledLyrics
-
-
-# for fooPartName in partNamesToOutput:
-#     print(f"\n\n\n{fooPartName}:")
-#     for bar in compiledLyrics[fooPartName]:
-#         print(f"   {bar}")
-
-
 
 # Display lyrics over data
 if '-plt' in sys.argv[1]:
@@ -370,45 +363,41 @@ if '-plt' in sys.argv[1]:
 	maxNote = -1
 	minNote = 99999
 	endTime = 0
-	for foo in partNamesToOutput:
+	for fooPartName in partNamesToOutput:
 		foo_DEC_SETUP = settings_yaml['Tracks'][fooPartName]['DEC_SETUP']
 		foo_OCTAVE_BOOST = settings_yaml['Tracks'][fooPartName]['OCTAVE_BOOST']
 
 		for fooLine in compiledLyrics[fooPartName]:
-			startTime = fooLine[0]
-			# partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
 
 			# Display Phoneme
 			for fooPhen in fooLine[1:]:
 				if fooPhen == ' ': continue
-				# labelText = f"{fooPhen[0]}<{round(fooPhen[1]*pow(2, foo_OCTAVE_BOOST/12))},{round(fooPhen[2]-foo_OCTAVE_BOOST)}>"
 
 				noteLen = round(fooPhen[1]*pow(2, foo_OCTAVE_BOOST/12))
 				noteVal = round(fooPhen[2]-foo_OCTAVE_BOOST)
 				
-				if noteVal > maxNote: maxNote = noteVal
-				if noteVal > -1 and noteVal < minNote: minNote = noteVal
+				if noteVal > maxNote: 
+					maxNote = noteVal
+				if noteVal > -1 and noteVal < minNote: 
+					minNote = noteVal
+
+				endTime += noteLen
 				
-				startTime += noteLen
-			
-			if startTime > endTime: endTime = startTime
 		
 	print(f"maxNote:{maxNote}")
 	print(f"minNote:{minNote}")
 	print(f"endTime:{endTime}")
 	imageDims = (m.ceil(endTime*xPerMs), m.ceil((maxNote-minNote)*yPerNote))
 	print(f"imageDims:{imageDims}")
-	
-	backColor = (0, 0, 0)
-	outImg = Image.new("RGBA", imageDims, backColor)
-	draw = ImageDraw.Draw(outImg)
-	labelFont = ImageFont.truetype('pyFuncs/fonts/NexaText-Trial-Light.ttf', 80)
 
-
-	noteList = []
 	# Display each track
 	ii = -1
 	for fooPartName in partNamesToOutput:
+		backColor = (0, 0, 0)
+		outImg = Image.new("RGBA", imageDims, backColor)
+		draw = ImageDraw.Draw(outImg)
+		labelFont = ImageFont.truetype('pyFuncs/fonts/NexaText-Trial-Light.ttf', 80)
+		
 		ii += 1
 		fooCol = colorSet[ii%len(colorSet)]
 		fooColAlpha = (fooCol[0], fooCol[1], fooCol[2], 100)
@@ -418,8 +407,7 @@ if '-plt' in sys.argv[1]:
 		print(f"{fooPartName} phoneme display   ii:{ii}   col:{fooCol}")
 		for fooLine in compiledLyrics[fooPartName]:
 			startTime = fooLine[0]
-			# partialTxtFile = f"outputs/{songTitle}/{fooPartName}/{startTime}.txt"
-
+			
 			# Display Phoneme
 			for fooPhen in fooLine[1:]:
 				if fooPhen == ' ': continue
@@ -429,11 +417,9 @@ if '-plt' in sys.argv[1]:
 				noteVal = round(fooPhen[2]-foo_OCTAVE_BOOST)
 
 				labelText = f"{fooPhen[0]}"
-				labelDims = labelFont.getsize(labelText)
+				labelDims = labelFont.getbbox(labelText)
 
 				notePos = maxNote-noteVal
-
-				noteList.append(notePos)
 
 				draw.rectangle(
 					((round(startTime*xPerMs), (notePos)*yPerNote),
@@ -451,7 +437,7 @@ if '-plt' in sys.argv[1]:
 
 				startTime += noteLen
 
-	outImg.save(f"outputs/{songTitle}/_vis/phonemePlot.png")
+		outImg.save(f"outputs/{songTitle}/_vis/phonemePlot_{fooPartName}.png")
 
 
 
@@ -504,7 +490,6 @@ if True:
 			procSet.append(DEC_proc)
 
 			# if fooPartName == "Bass": print(f"./say.exe -w {outputWav} < {partialTxtFileName}")
-
 
 # Wait for all of the DECtalk programs to exit
 ii=0
