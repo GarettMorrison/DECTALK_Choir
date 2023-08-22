@@ -19,7 +19,7 @@ def loadMidiData(midiFileName, printInfo=True):
 	active_times = []
 
 	trackTempo = 300000
-
+	
 	for channel, track in enumerate(mid.tracks):
 		if printInfo: print('\nTrack {}: {}'.format(channel, track.name))
 		# channel = 0
@@ -36,6 +36,8 @@ def loadMidiData(midiFileName, printInfo=True):
 
 		currTime = 0
 		for msg in track:
+			currTime += msg.time
+
 			if msg.type == 'track_name':
 				if printInfo: print(f'   name:{msg}      {ii}')
 				ii = 0
@@ -67,11 +69,7 @@ def loadMidiData(midiFileName, printInfo=True):
 
 			# print(msg)
 
-			currTime += msg.time
-
-			
-
-			if msg.type == 'note_on': 
+			if msg.type == 'note_on':
 				active_notes.append( msg.note  )
 				active_times.append( currTime )
 			elif msg.note in active_notes:
@@ -83,9 +81,12 @@ def loadMidiData(midiFileName, printInfo=True):
 				notesByChannel[channel]['velocity'].append( msg.velocity )
 				notesByChannel[channel]['start'].append( active_times[noteInd] )
 				notesByChannel[channel]['end'].append( currTime )
+				
 
 				del active_notes[noteInd]
 				del active_times[noteInd]
 				# notesByChannel[channel]['note'].append( 255 )
+			else:
+				print(f"ERROR: {msg}")
 				
 	return(notesByChannel)
